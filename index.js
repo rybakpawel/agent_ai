@@ -18,6 +18,8 @@ app.post("/ask-audio", async (req, res) => {
       return res.status(400).json({ error: "Missing base64Audio" });
     }
 
+    console.log(base64Audio);
+
     // Wysyłamy nagranie bezpośrednio do 11.ai MCP
     const response = await axios.post(
       process.env.ELEVEN_MCP_URL, // Np. https://your-agent-name.11.ai/mcp
