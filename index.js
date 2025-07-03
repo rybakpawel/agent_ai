@@ -12,13 +12,13 @@ const PORT = process.env.PORT || 3000;
 // Endpoint odbierający nagranie
 app.post("/ask-audio", async (req, res) => {
   try {
-    const { base64Audio } = req.body;
+    const { audioBase64 } = req.body;
 
-    if (!base64Audio) {
+    if (!audioBase64) {
       return res.status(400).json({ error: "Missing base64Audio" });
     }
 
-    console.log(base64Audio);
+    console.log(audioBase64);
 
     // Wysyłamy nagranie bezpośrednio do 11.ai MCP
     const response = await axios.post(
@@ -26,7 +26,7 @@ app.post("/ask-audio", async (req, res) => {
       {
         audio: {
           format: "webm",
-          base64: base64Audio,
+          base64: audioBase64,
         },
         messages: [
           {
