@@ -43,7 +43,7 @@ app.post("/ask-audio", async (req, res) => {
     //   }
     // );
 
-    // res.json(response.data);
+    res.json({ error: "dziala" })
   } catch (error) {
     console.error("Error:", error.message);
     res.status(500).json({ error: "Server error", details: error.message });
