@@ -12,37 +12,38 @@ const PORT = process.env.PORT || 3000;
 // Endpoint odbierający nagranie
 app.post("/ask-audio", async (req, res) => {
   try {
-    const { base64Audio } = req.body;
+    // const { base64Audio } = req.body;
 
-    if (!base64Audio) {
-      return res.status(400).json({ error: "Missing base64Audio" });
-    }
+    // if (!base64Audio) {
+    //   return res.status(400).json({ error: "Missing base64Audio" });
+    // }
 
-    console.log(base64Audio);
+    // console.log(base64Audio);
+    console.log("test");
 
     // Wysyłamy nagranie bezpośrednio do 11.ai MCP
-    const response = await axios.post(
-      process.env.ELEVEN_MCP_URL, // Np. https://your-agent-name.11.ai/mcp
-      {
-        audio: {
-          format: "webm",
-          base64: base64Audio,
-        },
-        messages: [
-          {
-            role: "user",
-            content: "Transcribe and act based on this command",
-          },
-        ],
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    // const response = await axios.post(
+    //   process.env.ELEVEN_MCP_URL, // Np. https://your-agent-name.11.ai/mcp
+    //   {
+    //     audio: {
+    //       format: "webm",
+    //       base64: base64Audio,
+    //     },
+    //     messages: [
+    //       {
+    //         role: "user",
+    //         content: "Transcribe and act based on this command",
+    //       },
+    //     ],
+    //   },
+    //   {
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //     },
+    //   }
+    // );
 
-    res.json(response.data);
+    // res.json(response.data);
   } catch (error) {
     console.error("Error:", error.message);
     res.status(500).json({ error: "Server error", details: error.message });
