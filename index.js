@@ -10,7 +10,7 @@ app.use(express.json({ limit: "10mb" }));
 const PORT = process.env.PORT || 3000;
 
 // Endpoint odbierający nagranie
-app.post("/voice", async (req, res) => {
+app.post("/ask-audio", async (req, res) => {
   try {
     const { base64Audio } = req.body;
 
