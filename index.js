@@ -1,71 +1,71 @@
 const express = require("express");
-const dotenv = require("dotenv");
-const axios = require("axios");
-
-dotenv.config();
+const { MCPServer, Tool } = require("@modelcontextprotocol/sdk");
 
 const app = express();
-app.use(express.json({ limit: "10mb" }));
 
-const PORT = process.env.PORT || 3000;
-
-function createPurchaseInitiative() {
-  return {
-    status: true,
-    message: "Tworzenie nowej inicjatywy zakupowej..",
-    module: "Sourcing",
-  };
-}
-
-app.post("/ask-audio", async (req, res) => {
-  try {
-    const { audioBase64 } = req.body;
-
-    if (!audioBase64) {
-      return res.status(400).json({ error: "Missing base64Audio" });
-    }
-
-    const mcpRequest = {
-      audio: {
-        format: "webm",
-        base64: audioBase64,
-        source: "microphone",
-      },
-      messages: [
-        {
-          role: "user",
-          content: "Transcribe and act based on this command",
-        },
-      ],
+// Definicja narzędzia: tworzenie inicjatywy zakupowej
+const createInitiative = new Tool({
+  name: "create_purchase_initiative",
+  description: "Creates a new purchasing initiative.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      name: { type: "string", description: "The name of the initiative." },
+    },
+    required: ["name"],
+  },
+  handler: async (input, context) => {
+    // Przykładowa logika biznesowa
+    return {
+      status: true,
+      message: `Inicjatywa zakupowa '${input.name}' została utworzona!`,
+      module: "Sourcing",
     };
-
-    const response = await axios.post(process.env.ELEVEN_MCP_URL, mcpRequest, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.ELEVEN_API_KEY}`,
-      },
-    });
-
-    const aiReply = response.data?.choices?.[0]?.message?.content || "";
-
-    if (aiReply.toLowerCase().includes("stwórz inicjatywę zakupową")) {
-      const initiative = createPurchaseInitiative({
-        name: "Przykładowa inicjatywa",
-      });
-      return res.json({ aiReply, initiative });
-    }
-
-    // Domyślna odpowiedź
-    res.json({ aiReply });
-  } catch (error) {
-    if (error.response) {
-      // Błąd z 11.ai
-      return res.status(error.response.status).json(error.response.data);
-    }
-    res.status(500).json({ error: "Server error", details: error.message });
-  }
+  },
 });
 
+// (Opcjonalnie) Definicja narzędzia: usuwanie inicjatywy zakupowej
+const deleteInitiative = new Tool({
+  name: "delete_purchase_initiative",
+  description: "Deletes an existing purchasing initiative by its ID.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      initiative_id: {
+        type: "string",
+        description: "The unique identifier of the initiative to delete.",
+      },
+    },
+    required: ["initiative_id"],
+  },
+  handler: async (input, context) => {
+    // Przykładowa logika biznesowa
+    return {
+      status: true,
+      message: `Inicjatywa o ID '${input.initiative_id}' została usunięta!`,
+      module: "Sourcing",
+      details: input,
+    };
+  },
+});
+
+// Tworzymy serwer MCP z narzędziami
+const mcpServer = new MCPServer({
+  tools: [createInitiative, deleteInitiative],
+  info: {
+    name: "bzone_agent",
+    description: "Server for handling B-Zone System tasks",
+    version: "1.0.0",
+    contact: {
+      name: "Twoje Imię",
+      email: "twoj@email.com",
+    },
+  },
+});
+
+app.use(mcpServer.router); // automatycznie wystawia manifest i endpointy
+
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
