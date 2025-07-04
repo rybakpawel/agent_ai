@@ -9,7 +9,14 @@ app.use(express.json({ limit: "10mb" }));
 
 const PORT = process.env.PORT || 3000;
 
-// Endpoint odbierający nagranie
+function createPurchaseInitiative() {
+  return {
+    status: true,
+    message: "Tworzenie nowej inicjatywy zakupowej..",
+    module: "Sourcing",
+  };
+}
+
 app.post("/ask-audio", async (req, res) => {
   try {
     const { audioBase64 } = req.body;
@@ -18,33 +25,43 @@ app.post("/ask-audio", async (req, res) => {
       return res.status(400).json({ error: "Missing base64Audio" });
     }
 
-    console.log(audioBase64);
+    const mcpRequest = {
+      audio: {
+        format: "webm",
+        base64: audioBase64,
+        source: "microphone",
+      },
+      messages: [
+        {
+          role: "user",
+          content: "Transcribe and act based on this command",
+        },
+      ],
+    };
 
-    // Wysyłamy nagranie bezpośrednio do 11.ai MCP
-    // const response = await axios.post(
-    //   process.env.ELEVEN_MCP_URL, // Np. https://your-agent-name.11.ai/mcp
-    //   {
-    //     audio: {
-    //       format: "webm",
-    //       base64: audioBase64,
-    //     },
-    //     messages: [
-    //       {
-    //         role: "user",
-    //         content: "Transcribe and act based on this command",
-    //       },
-    //     ],
-    //   },
-    //   {
-    //     headers: {
-    //       "Content-Type": "application/json",
-    //     },
-    //   }
-    // );
+    const response = await axios.post(process.env.ELEVEN_MCP_URL, mcpRequest, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.ELEVEN_API_KEY}`,
+      },
+    });
 
-    res.json({ success: "dziala" });
+    const aiReply = response.data?.choices?.[0]?.message?.content || "";
+
+    if (aiReply.toLowerCase().includes("stwórz inicjatywę zakupową")) {
+      const initiative = createPurchaseInitiative({
+        name: "Przykładowa inicjatywa",
+      });
+      return res.json({ aiReply, initiative });
+    }
+
+    // Domyślna odpowiedź
+    res.json({ aiReply });
   } catch (error) {
-    console.error("Error:", error.message);
+    if (error.response) {
+      // Błąd z 11.ai
+      return res.status(error.response.status).json(error.response.data);
+    }
     res.status(500).json({ error: "Server error", details: error.message });
   }
 });
