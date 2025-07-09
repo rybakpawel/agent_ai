@@ -1,7 +1,10 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 // import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { HttpServerTransport } from "@modelcontextprotocol/sdk/server/http.js";
+// import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { z } from "zod";
+
+console.log("B-Zone Agent");
 
 // Definicja serwera MCP
 const mcpServer = new McpServer({
@@ -38,7 +41,7 @@ mcpServer.registerTool(
 // Uruchomienie serwera MCP na stdio
 async function init() {
   // const transport = new StdioServerTransport();
-  const transport = new HttpServerTransport({ port: 3000 });
+  const transport = new StreamableHTTPServerTransport({ port: 3000 });
   await mcpServer.connect(transport);
 }
 
