@@ -41,7 +41,9 @@ mcpServer.registerTool(
 // Uruchomienie serwera MCP na stdio
 async function init() {
   // const transport = new StdioServerTransport();
-  const transport = new StreamableHTTPServerTransport({ port: 3000 });
+  const transport = new StreamableHTTPServerTransport({
+    port: process.env.PORT || 3000,
+  });
   await mcpServer.connect(transport);
 }
 
