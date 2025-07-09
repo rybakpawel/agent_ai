@@ -1,50 +1,76 @@
+import express from "express";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-// import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-// import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { z } from "zod";
+import dotenv from "dotenv";
+dotenv.config();
 
-console.log("B-Zone Agent");
+const app = express();
+app.use(express.json());
 
-// Definicja serwera MCP
-const mcpServer = new McpServer({
-  name: "B-Zone Agent",
-  description: "Server for handling B-Zone System tasks",
-  version: "1.0.0",
-});
+app.post("/mcp", async (req, res) => {
+  try {
+    const mcpServer = new McpServer({
+      name: "B-Zone Agent",
+      description: "Server for handling B-Zone System tasks",
+      version: "1.0.0",
+    });
 
-// Rejestracja narzędzia
-mcpServer.registerTool(
-  "createPurchaseInitiativeV15",
-  {
-    title: "Create purchase initiative",
-    description: "Create a new purchasing initiative with provided name.",
-    inputSchema: { name: z.string() },
-  },
-  async ({ name }) => {
-    const res = await fetch(
-      `https://skillandchill-dev.outsystemsenterprise.com/PR_Sandbox_BZONE/rest/AgentAI/CreateRequest?name=${name}`,
+    mcpServer.registerTool(
+      "createPurchaseInitiativeV15",
       {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        title: "Create purchase initiative",
+        description: "Create a new purchasing initiative with provided name.",
+        inputSchema: { name: z.string() },
+      },
+      async ({ name }) => {
+        const res = await fetch(
+          `https://skillandchill-dev.outsystemsenterprise.com/PR_Sandbox_BZONE/rest/AgentAI/CreateRequest?name=${name}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+
+        const data = await res.json();
+
+        return {
+          content: [{ type: "text", text: data.message }],
+        };
       }
     );
 
-    const data = await res.json();
-
-    return {
-      content: [{ type: "text", text: data.message }],
-    };
+    const transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: undefined,
+    });
+    res.on("close", () => {
+      console.log("Request closed");
+      transport.close();
+      mcpServer.close();
+    });
+    await mcpServer.connect(transport);
+    await transport.handleRequest(req, res, req.body);
+  } catch (error) {
+    console.error("Error handling MCP request:", error);
+    if (!res.headersSent) {
+      res.status(500).json({
+        jsonrpc: "2.0",
+        error: {
+          code: -32603,
+          message: "Internal server error",
+        },
+        id: null,
+      });
+    }
   }
-);
+});
 
-// Uruchomienie serwera MCP na stdio
-async function init() {
-  // const transport = new StdioServerTransport();
-  const transport = new StreamableHTTPServerTransport({
-    port: process.env.PORT || 3000,
-  });
-  await mcpServer.connect(transport);
-}
-
-init();
+app.listen(process.env.PORT || 3000, (error) => {
+  if (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
+  console.log(
+    `MCP Stateless Streamable HTTP Server listening on port ${process.env.PORT}`
+  );
+});
