@@ -1,5 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+// import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { HttpServerTransport } from "@modelcontextprotocol/sdk/server/http.js";
 import { z } from "zod";
 
 // Definicja serwera MCP
@@ -36,7 +37,8 @@ mcpServer.registerTool(
 
 // Uruchomienie serwera MCP na stdio
 async function init() {
-  const transport = new StdioServerTransport();
+  // const transport = new StdioServerTransport();
+  const transport = new HttpServerTransport({ port: 3000 });
   await mcpServer.connect(transport);
 }
 
