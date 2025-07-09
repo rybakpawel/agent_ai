@@ -1,48 +1,43 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-
-console.log("B-Zone Agent");
-
-// Funkcja biznesowa: tworzenie inicjatywy
-async function createPurchaseInitiative({ name }) {
-  await fetch(
-    "https://skillandchill-dev.outsystemsenterprise.com/PR_Sandbox_BZONE/rest/AgentAI/CreateRequest",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-    }
-  );
-
-  return {
-    status: true,
-    message: `Inicjatywa zakupowa '${name}' została utworzona!`,
-  };
-}
+import { z } from "zod";
 
 // Definicja serwera MCP
 const mcpServer = new McpServer({
-  info: {
-    name: "B-Zone Agent",
-    description: "Server for handling B-Zone System tasks",
-    version: "1.0.0",
-  },
+  name: "B-Zone Agent",
+  description: "Server for handling B-Zone System tasks",
+  version: "1.0.0",
 });
 
 // Rejestracja narzędzia
-mcpServer.tool(
-  "createPurchaseInitiative",
-  "Create a new purchasing initiative with provided name.",
+mcpServer.registerTool(
+  "createPurchaseInitiativeV15",
   {
-    inputSchema: {
-      type: "object",
-      properties: {
-        name: { type: "string", description: "The name of the initiative." },
-      },
-    },
-    handler: createPurchaseInitiative,
+    title: "Create purchase initiative",
+    description: "Create a new purchasing initiative with provided name.",
+    inputSchema: { name: z.string() },
+  },
+  async ({ name }) => {
+    const res = await fetch(
+      `https://skillandchill-dev.outsystemsenterprise.com/PR_Sandbox_BZONE/rest/AgentAI/CreateRequest?name=${name}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+
+    const data = await res.json();
+
+    return {
+      content: [{ type: "text", text: data.message }],
+    };
   }
 );
 
 // Uruchomienie serwera MCP na stdio
-const transport = new StdioServerTransport();
-mcpServer.connect(transport);
+async function init() {
+  const transport = new StdioServerTransport();
+  await mcpServer.connect(transport);
+}
+
+init();
