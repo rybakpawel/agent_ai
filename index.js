@@ -17,11 +17,14 @@ app.post("/mcp", async (req, res) => {
     });
 
     mcpServer.registerTool(
-      "createPurchaseInitiativeV15",
+      "createPurchaseInitiative",
       {
         title: "Create purchase initiative",
-        description: "Create a new purchasing initiative with provided name.",
-        inputSchema: { name: z.string() },
+        description:
+          "Create a new purchasing initiative with provided parameters.",
+        inputSchema: {
+          name: z.string().describe("The name of the purchase initiative"),
+        },
       },
       async ({ name }) => {
         const res = await fetch(
