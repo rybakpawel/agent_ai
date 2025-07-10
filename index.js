@@ -24,11 +24,12 @@ app.post("/mcp", async (req, res) => {
           "Create a new purchasing initiative with provided parameters.",
         inputSchema: {
           name: z.string().describe("The name of the purchase initiative"),
+          supplierId: z.number().describe("The ID of the supplier"),
         },
       },
-      async ({ name }) => {
+      async ({ name, supplierId }) => {
         const res = await fetch(
-          `https://skillandchill-dev.outsystemsenterprise.com/PR_Sandbox_BZONE/rest/AgentAI/CreateRequest?name=${name}`,
+          `https://skillandchill-dev.outsystemsenterprise.com/PR_Sandbox_BZONE/rest/AgentAI/CreateRequest?name=${name}&supplierId=${supplierId}`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -39,6 +40,30 @@ app.post("/mcp", async (req, res) => {
 
         return {
           content: [{ type: "text", text: data.message }],
+        };
+      }
+    );
+
+    mcpServer.registerTool(
+      "suppliersList",
+      {
+        title: "Suppliers list",
+        description: "Get a list of all suppliers.",
+        inputSchema: {},
+      },
+      async () => {
+        const res = await fetch(
+          `https://skillandchill-dev.outsystemsenterprise.com/PR_Sandbox_BZONE/rest/AgentAI/SuppliersList`,
+          {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+
+        const suppliers = await res.json();
+
+        return {
+          content: [{ type: "json", data: suppliers }],
         };
       }
     );
