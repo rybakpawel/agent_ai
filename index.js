@@ -63,7 +63,7 @@ app.post("/mcp", async (req, res) => {
         const suppliers = await res.json();
 
         return {
-          content: [{ type: "json", data: suppliers }],
+          content: [{ type: "text", data: JSON.stringify(suppliers) }],
         };
       }
     );
