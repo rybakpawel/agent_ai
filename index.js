@@ -51,7 +51,6 @@ app.post("/mcp", async (req, res) => {
         description: "Get a list of all suppliers.",
       },
       async () => {
-        console.log("Suppliers list");
         const res = await fetch(
           `https://skillandchill-dev.outsystemsenterprise.com/PR_Sandbox_BZONE/rest/AgentAI/SuppliersList`,
           {
@@ -59,11 +58,11 @@ app.post("/mcp", async (req, res) => {
             headers: { "Content-Type": "application/json" },
           }
         );
-        console.log("res: " + res);
+
         const suppliers = await res.json();
-        console.log("suppliers: " + suppliers);
+
         return {
-          content: [{ type: "json", data: suppliers }],
+          content: [{ type: "text", text: JSON.stringify(suppliers, null, 2) }],
         };
       }
     );
