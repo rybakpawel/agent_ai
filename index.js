@@ -26,18 +26,17 @@ app.post("/mcp", async (req, res) => {
           initiativeName: z
             .string()
             .describe("The name of the purchase initiative."),
-          supplierName: z
+          supplier: z
             .string()
             .describe(
               "The name of the supplier. Use the 'getSuppliers' tool to find the ID."
             ),
         },
       },
-      async ({ initiativeName, supplierId, supplierName }) => {
-        console.log(supplierId);
-        console.log(supplierName);
+      async ({ initiativeName, supplier }) => {
+        console.log(supplier);
         const res = await fetch(
-          `https://skillandchill-dev.outsystemsenterprise.com/PR_Sandbox_BZONE/rest/AgentAI/CreateRequest?name=${initiativeName}&supplierId=${supplierId}`,
+          `https://skillandchill-dev.outsystemsenterprise.com/PR_Sandbox_BZONE/rest/AgentAI/CreateRequest?name=${initiativeName}&supplierId=${supplier}`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
