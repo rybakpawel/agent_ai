@@ -21,7 +21,7 @@ app.post("/mcp", async (req, res) => {
       {
         title: "Create purchase initiative",
         description:
-          "Create a new purchasing initiative with provided parameters.",
+          "Create a new purchasing initiative with provided parameters. Use the 'getSuppliers' tool to find the ID of the supplier.",
         inputSchema: {
           initiativeName: z
             .string()
@@ -33,7 +33,9 @@ app.post("/mcp", async (req, res) => {
             ),
         },
       },
-      async ({ initiativeName, supplierId }) => {
+      async ({ initiativeName, supplierId, supplierName }) => {
+        console.log(supplierId);
+        console.log(supplierName);
         const res = await fetch(
           `https://skillandchill-dev.outsystemsenterprise.com/PR_Sandbox_BZONE/rest/AgentAI/CreateRequest?name=${initiativeName}&supplierId=${supplierId}`,
           {
