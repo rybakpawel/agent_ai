@@ -23,13 +23,19 @@ app.post("/mcp", async (req, res) => {
         description:
           "Create a new purchasing initiative with provided parameters.",
         inputSchema: {
-          name: z.string().describe("The name of the purchase initiative"),
-          supplierId: z.number().describe("The ID of the supplier"),
+          initiativeName: z
+            .string()
+            .describe("The name of the purchase initiative."),
+          supplierName: z
+            .string()
+            .describe(
+              "The name of the supplier. Use the 'getSuppliers' tool to find the ID."
+            ),
         },
       },
-      async ({ name, supplierId }) => {
+      async ({ initiativeName, supplierId }) => {
         const res = await fetch(
-          `https://skillandchill-dev.outsystemsenterprise.com/PR_Sandbox_BZONE/rest/AgentAI/CreateRequest?name=${name}&supplierId=${supplierId}`,
+          `https://skillandchill-dev.outsystemsenterprise.com/PR_Sandbox_BZONE/rest/AgentAI/CreateRequest?name=${initiativeName}&supplierId=${supplierId}`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -45,10 +51,10 @@ app.post("/mcp", async (req, res) => {
     );
 
     mcpServer.registerTool(
-      "suppliersList",
+      "getSuppliers",
       {
-        title: "Suppliers list",
-        description: "Get a list of all suppliers.",
+        title: "Get suppliers",
+        description: "Retrieves a list of suppliers.",
       },
       async () => {
         const res = await fetch(
@@ -59,10 +65,11 @@ app.post("/mcp", async (req, res) => {
           }
         );
 
-        const suppliers = await res.json();
+        const jsonData = await res.json();
+        const data = JSON.stringify(jsonData, null, 2);
 
         return {
-          content: [{ type: "json", data: { suppliers } }],
+          content: [{ type: "text", text: data }],
         };
       }
     );
