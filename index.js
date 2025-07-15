@@ -32,7 +32,7 @@ app.post("/mcp", async (req, res) => {
         const data = JSON.stringify(jsonData, null, 2);
 
         return {
-          content: [{ type: "text", text: data }],
+          content: [{ uri: "suppliersList://data", text: data }],
         };
       }
     );
@@ -47,17 +47,17 @@ app.post("/mcp", async (req, res) => {
           initiativeName: z
             .string()
             .describe("The name of the purchase initiative."),
-          supplier: z
+          supplierId: z
             .string()
             .describe(
-              "Supplier assigned to the purchase initiative. Use the 'suppliersList' resource to find the ID of the supplier based on the name."
+              "ID of the supplier assigned to the initiative. Use the 'suppliersList' resource to find the correct ID based on the spoken supplier name."
             ),
         },
       },
-      async ({ initiativeName, supplier }) => {
-        console.log(supplier);
+      async ({ initiativeName, supplierId }) => {
+        console.log(supplierId);
         const res = await fetch(
-          `https://skillandchill-dev.outsystemsenterprise.com/PR_Sandbox_BZONE/rest/AgentAI/CreateRequest?name=${initiativeName}&supplierId=${supplier}`,
+          `https://skillandchill-dev.outsystemsenterprise.com/PR_Sandbox_BZONE/rest/AgentAI/CreateRequest?name=${initiativeName}&supplierId=${supplierId}`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
