@@ -16,12 +16,33 @@ app.post("/mcp", async (req, res) => {
       version: "1.0.0",
     });
 
+    mcpServer.registerResource(
+      "suppliersList",
+      "suppliersList://data",
+      async () => {
+        const res = await fetch(
+          `https://skillandchill-dev.outsystemsenterprise.com/PR_Sandbox_BZONE/rest/AgentAI/SuppliersList`,
+          {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+
+        const jsonData = await res.json();
+        const data = JSON.stringify(jsonData, null, 2);
+
+        return {
+          content: [{ type: "text", text: data }],
+        };
+      }
+    );
+
     mcpServer.registerTool(
       "createPurchaseInitiative",
       {
         title: "Create purchase initiative",
         description:
-          "Create a new purchasing initiative with provided parameters. Use the 'getSuppliers' tool to find the ID of the supplier.",
+          "Create a new purchasing initiative with provided parameters. Always use the 'suppliersList' resource to find the ID of the supplier.",
         inputSchema: {
           initiativeName: z
             .string()
@@ -29,7 +50,7 @@ app.post("/mcp", async (req, res) => {
           supplier: z
             .string()
             .describe(
-              "The name of the supplier. Use the 'getSuppliers' tool to find the ID."
+              "Supplier assigned to the purchase initiative. Use the 'suppliersList' resource to find the ID of the supplier based on the name."
             ),
         },
       },
@@ -51,29 +72,29 @@ app.post("/mcp", async (req, res) => {
       }
     );
 
-    mcpServer.registerTool(
-      "getSuppliers",
-      {
-        title: "Get suppliers",
-        description: "Retrieves a list of suppliers.",
-      },
-      async () => {
-        const res = await fetch(
-          `https://skillandchill-dev.outsystemsenterprise.com/PR_Sandbox_BZONE/rest/AgentAI/SuppliersList`,
-          {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-          }
-        );
+    // mcpServer.registerTool(
+    //   "getSuppliers",
+    //   {
+    //     title: "Get suppliers",
+    //     description: "Retrieves a list of suppliers.",
+    //   },
+    //   async () => {
+    //     const res = await fetch(
+    //       `https://skillandchill-dev.outsystemsenterprise.com/PR_Sandbox_BZONE/rest/AgentAI/SuppliersList`,
+    //       {
+    //         method: "GET",
+    //         headers: { "Content-Type": "application/json" },
+    //       }
+    //     );
 
-        const jsonData = await res.json();
-        const data = JSON.stringify(jsonData, null, 2);
+    //     const jsonData = await res.json();
+    //     const data = JSON.stringify(jsonData, null, 2);
 
-        return {
-          content: [{ type: "text", text: data }],
-        };
-      }
-    );
+    //     return {
+    //       content: [{ type: "text", text: data }],
+    //     };
+    //   }
+    // );
 
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
