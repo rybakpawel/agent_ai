@@ -1,6 +1,7 @@
 import express from "express";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import dotenv from "dotenv";
 dotenv.config();
@@ -42,7 +43,7 @@ app.post("/mcp", async (req, res) => {
       {
         title: "Create purchase initiative",
         description:
-          "Create a new purchasing initiative with provided parameters. Always use the 'suppliersList' resource to find the ID of the supplier.",
+          "Create a new purchasing initiative with provided parameters. Always use the 'suppliersList' tool to find the ID of the supplier.",
         inputSchema: {
           initiativeName: z
             .string()
@@ -50,7 +51,7 @@ app.post("/mcp", async (req, res) => {
           supplierId: z
             .string()
             .describe(
-              "ID of the supplier assigned to the initiative. Use the 'suppliersList' resource to find the correct ID based on the spoken supplier name."
+              "ID of the supplier assigned to the initiative. Use the 'suppliersList' tool to find the correct ID based on the spoken supplier name."
             ),
         },
       },
