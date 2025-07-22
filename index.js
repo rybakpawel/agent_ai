@@ -1,7 +1,6 @@
 import express from "express";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import dotenv from "dotenv";
 dotenv.config();
@@ -16,27 +15,6 @@ app.post("/mcp", async (req, res) => {
       description: "Server for handling B-Zone System tasks",
       version: "1.0.0",
     });
-
-    // mcpServer.registerResource(
-    //   "suppliersList",
-    //   "suppliersList://data",
-    //   async () => {
-    //     const res = await fetch(
-    //       `https://skillandchill-dev.outsystemsenterprise.com/PR_Sandbox_BZONE/rest/AgentAI/SuppliersList`,
-    //       {
-    //         method: "GET",
-    //         headers: { "Content-Type": "application/json" },
-    //       }
-    //     );
-
-    //     const jsonData = await res.json();
-    //     const data = JSON.stringify(jsonData, null, 2);
-
-    //     return {
-    //       content: [{ uri: "suppliersList://data", text: data }],
-    //     };
-    //   }
-    // );
 
     mcpServer.registerTool(
       "createPurchaseInitiative",
@@ -56,7 +34,6 @@ app.post("/mcp", async (req, res) => {
         },
       },
       async ({ initiativeName, supplierId }) => {
-        console.log(supplierId);
         const res = await fetch(
           `https://skillandchill-dev.outsystemsenterprise.com/PR_Sandbox_BZONE/rest/AgentAI/CreateRequest?name=${initiativeName}&supplierId=${supplierId}`,
           {
@@ -98,44 +75,25 @@ app.post("/mcp", async (req, res) => {
     );
 
     mcpServer.registerTool(
-      "findPurchaseInitiative",
+      "getPurchaseInitiatives",
       {
-        title: "Find purchase initiative",
-        description:
-          "Returns a purchasing initiative with provided parameters. All parameters are optional.",
-        inputSchema: {
-          initiativeName: z
-            .string()
-            .describe("The name of the purchase initiative.")
-            .optional(),
-          supplierName: z
-            .string()
-            .describe(
-              "Name of the supplier assigned to the initiative. Use the 'suppliersList' tool to find the correct ID based on the spoken supplier name."
-            )
-            .optional(),
-          buyerName: z
-            .string()
-            .describe(
-              "ID of the supplier assigned to the initiative. Use the 'suppliersList' tool to find the correct ID based on the spoken supplier name."
-            )
-            .optional(),
-        },
+        title: "Get purchase initiatives",
+        description: "Retrieves a list of suppliers.",
       },
-      async ({ initiativeName, supplierId }) => {
-        console.log(supplierId);
+      async () => {
         const res = await fetch(
-          `https://skillandchill-dev.outsystemsenterprise.com/PR_Sandbox_BZONE/rest/AgentAI/CreateRequest?name=${initiativeName}&supplierId=${supplierId}`,
+          `https://skillandchill-dev.outsystemsenterprise.com/PR_Sandbox_BZONE/rest/AgentAI/PurchaseInitiativesList`,
           {
-            method: "POST",
+            method: "GET",
             headers: { "Content-Type": "application/json" },
           }
         );
 
-        const data = await res.json();
+        const jsonData = await res.json();
+        const data = JSON.stringify(jsonData, null, 2);
 
         return {
-          content: [{ type: "text", text: data.message }],
+          content: [{ type: "text", text: data }],
         };
       }
     );
