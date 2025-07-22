@@ -78,7 +78,7 @@ app.post("/mcp", async (req, res) => {
       "getPurchaseInitiatives",
       {
         title: "Get purchase initiatives",
-        description: "Retrieves a list of suppliers.",
+        description: "Retrieves a list of purchase initiatives.",
       },
       async () => {
         const res = await fetch(
