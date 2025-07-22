@@ -43,7 +43,7 @@ app.post("/mcp", async (req, res) => {
       {
         title: "Create purchase initiative",
         description:
-          "Create a new purchasing initiative with provided parameters. Always use the 'suppliersList' tool to find the ID of the supplier.",
+          "Create a new purchasing initiative with provided parameters. Always use the 'suppliersList' tool to find the ID of the supplier. After finding supplier ID, use the 'createPurchaseInitiative' Create a new purchasing initiative with provided parameters. Always use the 'suppliersList' tool to find the ID of the supplier. After finding supplier ID, use the 'createPurchaseInitiative' tool to create the initiative. to find the ID of the initiative.",
         inputSchema: {
           initiativeName: z
             .string()
@@ -93,6 +93,49 @@ app.post("/mcp", async (req, res) => {
 
         return {
           content: [{ type: "text", text: data }],
+        };
+      }
+    );
+
+    mcpServer.registerTool(
+      "findPurchaseInitiative",
+      {
+        title: "Find purchase initiative",
+        description:
+          "Returns a purchasing initiative with provided parameters. All parameters are optional.",
+        inputSchema: {
+          initiativeName: z
+            .string()
+            .describe("The name of the purchase initiative.")
+            .optional(),
+          supplierName: z
+            .string()
+            .describe(
+              "Name of the supplier assigned to the initiative. Use the 'suppliersList' tool to find the correct ID based on the spoken supplier name."
+            )
+            .optional(),
+          buyerName: z
+            .string()
+            .describe(
+              "ID of the supplier assigned to the initiative. Use the 'suppliersList' tool to find the correct ID based on the spoken supplier name."
+            )
+            .optional(),
+        },
+      },
+      async ({ initiativeName, supplierId }) => {
+        console.log(supplierId);
+        const res = await fetch(
+          `https://skillandchill-dev.outsystemsenterprise.com/PR_Sandbox_BZONE/rest/AgentAI/CreateRequest?name=${initiativeName}&supplierId=${supplierId}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+
+        const data = await res.json();
+
+        return {
+          content: [{ type: "text", text: data.message }],
         };
       }
     );
