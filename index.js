@@ -21,7 +21,7 @@ app.post("/mcp", async (req, res) => {
       {
         title: "Create purchase initiative",
         description:
-          "Create a new purchasing initiative with provided parameters. Always use the 'suppliersList' tool to find the ID of the supplier. After finding supplier ID, use the 'createPurchaseInitiative' to create a new purchasing initiative with provided parameters. Always use the 'suppliersList' tool to find the ID of the supplier. After finding supplier ID, use the 'createPurchaseInitiative' tool to create the initiative.",
+          "Create a new purchasing initiative with provided parameters. Always use the 'suppliersList' tool to find the ID of the supplier. After finding supplier ID, use the 'createPurchaseInitiative' to create a new purchasing initiative.",
         inputSchema: {
           initiativeName: z
             .string()
