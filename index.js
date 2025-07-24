@@ -109,108 +109,92 @@ function registerTools(server) {
   );
 }
 
-/**
- * POST /mcp – obsługa RPC i inicjalizacji
- */
+// Funkcja planująca wygaśnięcie sesji
+function scheduleSessionCleanup(sessionId) {
+  if (sessions[sessionId].timeout) clearTimeout(sessions[sessionId].timeout);
+  sessions[sessionId].timeout = setTimeout(() => {
+    console.log(`[MCP] Sesja wygasła: ${sessionId}`);
+    sessions[sessionId].transport.close();
+    sessions[sessionId].server.close();
+    delete sessions[sessionId];
+  }, SESSION_TIMEOUT);
+}
+
+// Obsługa POST /mcp
 app.post("/mcp", async (req, res) => {
-  const sessionIdHeader = req.headers["mcp-session-id"];
-  let sessionId = sessionIdHeader || null;
+  const incomingSessionId = req.headers["mcp-session-id"];
+  let session;
 
-  try {
-    let session;
-
-    // Jeśli istnieje aktywna sesja
-    if (sessionId && sessions[sessionId]) {
-      session = sessions[sessionId];
-    }
-    // Jeśli to żądanie inicjalizacyjne
-    else if (!sessionId && isInitializeRequest(req.body)) {
-      sessionId = randomUUID();
-
-      const transport = new StreamableHTTPServerTransport({
-        sessionIdGenerator: () => sessionId,
-        onsessioninitialized: (sid) => {
-          console.log(`[MCP] Sesja zainicjalizowana: ${sid}`);
-        },
-      });
-
-      // Utwórz MCP server i zarejestruj narzędzia
-      const server = new McpServer({
-        name: "B-Zone Agent",
-        description: "Server for handling B-Zone System tasks",
-        version: "1.0.0",
-      });
-      registerTools(server);
-
-      // Połącz serwer z transportem
-      await server.connect(transport);
-
-      // Zapisz sesję
-      sessions[sessionId] = { transport, server };
-
-      // Obsłuż zamknięcie połączenia
-      res.on("close", () => {
-        console.log(`[MCP] Połączenie zamknięte: ${sessionId}`);
-        if (sessions[sessionId]) {
-          sessions[sessionId].transport.close();
-          sessions[sessionId].server.close();
-          delete sessions[sessionId];
-        }
-      });
-
-      session = sessions[sessionId];
-    } else {
-      // Brak sesji lub błędny request
-      res.status(400).json({
-        jsonrpc: "2.0",
-        error: {
-          code: -32000,
-          message: "Bad Request: No valid session ID provided",
-        },
-        id: null,
-      });
-      return;
-    }
-
-    // Obsłuż żądanie przez transport
-    await session.transport.handleRequest(req, res, req.body);
-  } catch (err) {
-    console.error("Error handling MCP request:", err);
-    if (!res.headersSent) {
-      res.status(500).json({
-        jsonrpc: "2.0",
-        error: {
-          code: -32603,
-          message: "Internal server error",
-        },
-        id: null,
-      });
-    }
+  // Reużycie istniejącej sesji
+  if (incomingSessionId && sessions[incomingSessionId]) {
+    session = sessions[incomingSessionId];
+    scheduleSessionCleanup(incomingSessionId);
   }
-});
+  // Nowa sesja (initialize)
+  else if (!incomingSessionId && isInitializeRequest(req.body)) {
+    const newSessionId = randomUUID();
 
-/**
- * GET /mcp – SSE dla powiadomień
- */
-app.get("/mcp", async (req, res) => {
-  const sessionId = req.headers["mcp-session-id"];
-  if (!sessionId || !sessions[sessionId]) {
-    res.status(400).send("Invalid or missing session ID");
+    const transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: () => newSessionId,
+      onsessioninitialized: (sid) => {
+        console.log(`[MCP] Sesja zainicjalizowana: ${sid}`);
+      },
+    });
+
+    const server = new McpServer({
+      name: "B-Zone Agent",
+      description: "Server for handling B-Zone System tasks",
+      version: "1.0.0",
+    });
+
+    registerTools(server);
+    await server.connect(transport);
+
+    sessions[newSessionId] = { transport, server };
+    session = sessions[newSessionId];
+    scheduleSessionCleanup(newSessionId);
+  } else {
+    res.status(400).json({
+      jsonrpc: "2.0",
+      error: {
+        code: -32000,
+        message: "Bad Request: No valid session ID provided",
+      },
+      id: null,
+    });
     return;
   }
-  await sessions[sessionId].transport.handleRequest(req, res);
+
+  // Obsłuż request JSON-RPC
+  await session.transport.handleRequest(req, res, req.body);
 });
 
-/**
- * DELETE /mcp – zakończenie sesji
- */
-app.delete("/mcp", async (req, res) => {
+// Obsługa SSE i DELETE
+const handleSessionRequest = async (req, res) => {
   const sessionId = req.headers["mcp-session-id"];
   if (!sessionId || !sessions[sessionId]) {
     res.status(400).send("Invalid or missing session ID");
     return;
   }
 
+  const session = sessions[sessionId];
+  scheduleSessionCleanup(sessionId);
+
+  await session.transport.handleRequest(req, res);
+};
+
+// GET dla SSE
+app.get("/mcp", handleSessionRequest);
+
+// DELETE dla zamknięcia sesji
+app.delete("/mcp", (req, res) => {
+  const sessionId = req.headers["mcp-session-id"];
+  if (!sessionId || !sessions[sessionId]) {
+    res.status(400).send("Invalid or missing session ID");
+    return;
+  }
+
+  console.log(`[MCP] Połączenie zamknięte: ${sessionId}`);
   sessions[sessionId].transport.close();
   sessions[sessionId].server.close();
   delete sessions[sessionId];
@@ -219,5 +203,9 @@ app.delete("/mcp", async (req, res) => {
 });
 
 app.listen(process.env.PORT || 3000, () => {
-  console.log(`MCP Server listening on port ${process.env.PORT || 3000}`);
+  console.log(
+    `MCP Stateless Streamable HTTP Server listening on port ${
+      process.env.PORT || 3000
+    }`
+  );
 });
