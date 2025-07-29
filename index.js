@@ -1,6 +1,9 @@
 import express from "express";
 import { randomUUID } from "node:crypto";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import {
+  McpServer,
+  ResourceTemplate,
+} from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
@@ -36,16 +39,103 @@ app.post("/mcp", async (req, res) => {
       version: "1.0.0",
     });
 
+    server.registerResource(
+      "purchaseInitiativeProcedureList",
+      new ResourceTemplate("bzone://static-table/dRequestProcedure"),
+      {
+        title: "dRequestProcedure static table",
+        description: "Retrieves a list of purchase initiative procedures.",
+        mimeType: "application/json",
+      },
+      async (uri) => {
+        const res = await fetch(
+          `https://skillandchill-dev.outsystemsenterprise.com/PR_Sandbox_BZONE/rest/AgentAI/RequestProceduresList`
+        );
+        const data = await res.json();
+
+        return {
+          contents: [
+            {
+              uri: uri.href,
+              text: JSON.stringify(data, null, 2),
+            },
+          ],
+        };
+      }
+    );
+
     server.registerTool(
       "createPurchaseInitiative",
       {
         title: "Create purchase initiative",
         description:
-          "Create a new purchasing initiative with provided parameters. All parameters are optional, but when parameter is not provided, ask once if user wants to provide it. Always use the 'suppliersList' tool to find the IDs of the suppliers. If there is less than 10 suppliers added to list, always ask if the user wants to add more suppliers. If the user wants to add more suppliers, use the 'suppliersList' tool again. If the user wants to create the initiative, use the 'createPurchaseInitiative' to create a new purchasing initiative.",
+          "Create a new purchasing initiative with provided parameters. All parameters are optional, but when parameter is not provided, ask once if user wants to provide it. Ask about parameters one by one. Always use the 'purchaseInitiativeProcedureList' resource to find the ID of the procedure. Always use the 'suppliersList' tool to find the IDs of the suppliers. If there is less than 10 suppliers added to list, always ask if the user wants to add more suppliers. If the user wants to add more suppliers, use the 'suppliersList' tool again. After finding all of the ids, use the 'createPurchaseInitiative' tool to create the initiative.",
         inputSchema: {
-          initiativeName: z
+          name: z
             .string()
-            .describe("The name of the purchase initiative.").optional,
+            .describe("The name of the purchase initiative.")
+            .optional(),
+          description: z
+            .string()
+            .describe("The description of the purchase initiative.")
+            .optional(),
+          procedureId: z
+            .string()
+            .describe(
+              "Id of the procedure. Use the 'purchaseInitiativeProcedureList' resource to find the correct ID based on the spoken procedure label. "
+            )
+            .optional(),
+          amount: z
+            .number()
+            .describe("Estimated value of the purchase initiative.")
+            .optional(),
+          suppliersIds: z
+            .array(z.string())
+            .describe(
+              "List of IDs of the suppliers assigned to the initiative. Use the 'suppliersList' tool to find the correct ID based on the spoken supplier name. There can be minimum 1 and maximum 10 suppliers assigned to the initiative."
+            )
+            .optional(),
+        },
+      },
+      async ({ name, description, procedureId, amount, suppliersIds }) => {
+        const res = await fetch(
+          `https://skillandchill-dev.outsystemsenterprise.com/PR_Sandbox_BZONE/rest/AgentAI/CreateRequest`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name,
+              description,
+              procedureId,
+              amount,
+              suppliersIds,
+            }),
+          }
+        );
+
+        const data = await res.json();
+
+        return {
+          content: [{ type: "text", text: data.message }],
+        };
+      }
+    );
+
+    server.registerTool(
+      "updatePurchaseInitiative",
+      {
+        title: "Update purchase initiative",
+        description:
+          "Updates an existing purchasing initiative with provided parameters. At the beginning user must provide at least one of the arguments - name or number of the initiative. All parameters are optional, but when parameter is not provided, ask once if user wants to provide it. Always use the 'suppliersList' tool to find the IDs of the suppliers. If there is less than 10 suppliers added to list, always ask if the user wants to add more suppliers. If the user wants to add more suppliers, use the 'suppliersList' tool again.",
+        inputSchema: {
+          name: z
+            .string()
+            .describe("The name of the purchase initiative.")
+            .optional(),
+          number: z
+            .string()
+            .describe("The number of the purchase initiative.")
+            .optional(),
           suppliersIds: z
             .array(z.string())
             .describe(
@@ -54,14 +144,15 @@ app.post("/mcp", async (req, res) => {
             .optional(),
         },
       },
-      async ({ initiativeName, suppliersIds }) => {
+      async ({ name, number, suppliersIds }) => {
         const res = await fetch(
-          `https://skillandchill-dev.outsystemsenterprise.com/PR_Sandbox_BZONE/rest/AgentAI/CreateRequest`,
+          `https://skillandchill-dev.outsystemsenterprise.com/PR_Sandbox_BZONE/rest/AgentAI/UpdateRequest`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              initiativeName,
+              name,
+              number,
               suppliersIds,
             }),
           }
@@ -90,11 +181,10 @@ app.post("/mcp", async (req, res) => {
           }
         );
 
-        const jsonData = await res.json();
-        const data = JSON.stringify(jsonData, null, 2);
+        const data = await res.json();
 
         return {
-          content: [{ type: "text", text: data }],
+          content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
         };
       }
     );
@@ -114,11 +204,10 @@ app.post("/mcp", async (req, res) => {
           }
         );
 
-        const jsonData = await res.json();
-        const data = JSON.stringify(jsonData, null, 2);
+        const data = await res.json();
 
         return {
-          content: [{ type: "text", text: data }],
+          content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
         };
       }
     );
