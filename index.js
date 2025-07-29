@@ -143,11 +143,9 @@ app.post("/mcp", async (req, res) => {
 
     server.registerTool(
       "getPurchaseInitiativeProcedureList",
-      new ResourceTemplate("bzone://static-table/dRequestProcedure"),
       {
         title: "Get purchase initiative procedures",
         description: "Retrieves a list of purchase initiative procedures.",
-        mimeType: "application/json",
       },
       async () => {
         const res = await fetch(
