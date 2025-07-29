@@ -39,31 +39,6 @@ app.post("/mcp", async (req, res) => {
       version: "1.0.0",
     });
 
-    server.registerResource(
-      "purchaseInitiativeProcedureList",
-      new ResourceTemplate("bzone://static-table/dRequestProcedure"),
-      {
-        title: "dRequestProcedure static table",
-        description: "Retrieves a list of purchase initiative procedures.",
-        mimeType: "application/json",
-      },
-      async (uri) => {
-        const res = await fetch(
-          `https://skillandchill-dev.outsystemsenterprise.com/PR_Sandbox_BZONE/rest/AgentAI/RequestProceduresList`
-        );
-        const data = await res.json();
-
-        return {
-          contents: [
-            {
-              uri: uri.href,
-              text: JSON.stringify(data, null, 2),
-            },
-          ],
-        };
-      }
-    );
-
     server.registerTool(
       "createPurchaseInitiative",
       {
@@ -162,6 +137,26 @@ app.post("/mcp", async (req, res) => {
 
         return {
           content: [{ type: "text", text: data.message }],
+        };
+      }
+    );
+
+    server.registerTool(
+      "getPurchaseInitiativeProcedureList",
+      new ResourceTemplate("bzone://static-table/dRequestProcedure"),
+      {
+        title: "Get purchase initiative procedures",
+        description: "Retrieves a list of purchase initiative procedures.",
+        mimeType: "application/json",
+      },
+      async () => {
+        const res = await fetch(
+          `https://skillandchill-dev.outsystemsenterprise.com/PR_Sandbox_BZONE/rest/AgentAI/RequestProceduresList`
+        );
+        const data = await res.json();
+
+        return {
+          content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
         };
       }
     );
