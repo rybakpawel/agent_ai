@@ -92,7 +92,7 @@ app.post("/mcp", async (req, res) => {
           suppliersIds: z
             .array(z.string())
             .describe(
-              "List of IDs of the suppliers assigned to the initiative. Use the 'suppliersList' tool to find the correct ID based on the spoken supplier name. There can be minimum 1 and maximum 10 suppliers assigned to the initiative."
+              "List of IDs of the suppliers assigned to the initiative. Use the 'suppliersList' tool to find the correct ID based on the spoken supplier name. There can be minimum 0 and maximum 10 suppliers assigned to the initiative."
             )
             .optional(),
         },
